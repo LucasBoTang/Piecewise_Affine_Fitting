@@ -51,11 +51,19 @@ def to_graph(image):
             # down edge
             down = (i+1, j)
             if down in graph.nodes:
-                graph.add_edge(cur, down, connections=1)
+                graph.add_edge(cur, down, connections=1, orth = True)
             # right edge
             right = (i, j+1)
             if right in graph.nodes:
-                graph.add_edge(cur, right, connections=1)
+                graph.add_edge(cur, right, connections=1, orth = True)
+            # diagonal edge
+            diagonal = (i+1, j+1)
+            if diagonal in graph.nodes:
+                graph.add_edge(cur, diagonal, connections=1, orth = False)
+            # cross edge
+            cross = (i-1, j+1)
+            if cross in graph.nodes:
+                graph.add_edge(cur, cross, connections=1, orth = False)
 
     return graph
 
