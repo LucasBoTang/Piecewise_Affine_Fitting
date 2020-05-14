@@ -59,7 +59,7 @@ def generate_images(size):
     images.append(image)
 
     # image 3
-    disp = cv2.imread("/home/bo/Develop/piecewise/image3.png", 0)
+    disp = cv2.imread("./data/image3.png", 0)
     image = disp_to_depth(disp)
     # get size
     h, w = image.shape
@@ -68,7 +68,16 @@ def generate_images(size):
     image = cv2.resize(image, (w, h))
     images.append(image)
 
-    disp = cv2.imread("/home/bo/Develop/piecewise/image4.png", 0)
+    disp = cv2.imread("./data/image4.png", 0)
+    image = disp_to_depth(disp)
+    # get size
+    h, w = image.shape
+    ratio = np.sqrt(24 * size ** 2 / (h * w))
+    h, w = int(h * ratio), int(w * ratio)
+    image = cv2.resize(image, (w, h))
+    images.append(image)
+
+    disp = cv2.imread("./data/image5.png", 0)
     image = disp_to_depth(disp)
     # get size
     h, w = image.shape
