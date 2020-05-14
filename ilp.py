@@ -42,7 +42,7 @@ def build_model(image, param1, param2, cycle4, cycle8, facet):
     multicutCallback._graph = graph.copy()
     multicutCallback._names = model.variables.get_names()
     multicutCallback._facet = facet
-    cutremoveCallback._names = model.variables.get_names()
+    #cutremoveCallback._names = model.variables.get_names()
 
     return model
 
@@ -126,7 +126,7 @@ def get_constraints(image, derivative, param1, cycle4=True, cycle8=True):
             senses += "E"
 
     M = 2
-    # big M constraints for row
+    # big M constraints for rows
     for i in range(derivative.shape[0]):
         #M = param1 * max(np.max(derivative[i,:,0]), 0.5)
         for j in range(1, image.shape[1]-1):
