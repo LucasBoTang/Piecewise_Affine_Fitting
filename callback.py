@@ -155,14 +155,26 @@ class multicutCallback(LazyConstraintCallback):
             i1, j1 = cycle[k]
             i2, j2 = cycle[k+1]
             # sort
-            i1, i2 = sorted([i1, i2])
-            j1, j2 = sorted([j1, j2])
+            if i1 > i2:
+                i1, i2 = i2, i1
+                j1, j2 = j2, j1
+            if j1 > j2:
+                i1, i2 = i2, i1
+                j1, j2 = j2, j1
             # row edge
-            if j2 - j1:
+            if i1 == i2 and j2 - j1 == 1:
                 name = "xr_{}_{}".format(i1, j1)
             # columns edge
-            if i2 - i1:
+            elif i2 - i1 == 1 and j1 == j2:
                 name = "xc_{}_{}".format(i1, j1)
+            # forward diagonal edge
+            elif i2 - i1 == 1 and j2 - j1 == 1:
+                name = "xf_{}_{}".format(i1, j1)
+            # backward diagonal edge
+            elif i2 - i1 == -1 and j2 - j1 == 1:
+                name = "xb_{}_{}".format(i1, j1)
+            else:
+                raise SystemExit("Edge variable is ignored!")
             names.append(name)
         return names
 
