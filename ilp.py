@@ -37,7 +37,7 @@ def build_model(image, param1, param2, cycle3=True, cycle4=True, cycle8=False, f
 
     # register callback
     #model.register_callback(cutremoveCallback)
-    #model.register_callback(multicutCallback)
+    model.register_callback(multicutCallback)
     # associate additional data
     multicutCallback._graph = graph.copy()
     multicutCallback._names = model.variables.get_names()
