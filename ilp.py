@@ -226,25 +226,49 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
 
     # 3-edge cycle multicut constraints
     if cycle3:
+        # first quadrant
         print("Add cycle3 constraints")
-        for i in range(image.shape[0]-1):
+        for i in range(1, image.shape[0]):
             for j in range(image.shape[1]-1):
-                # 3 edges
                 vars = ["xr_{}_{}".format(i, j),
-                        "xc_{}_{}".format(i, j+1),
-                        "xf_{}_{}".format(i, j)]
+                        "xc_{}_{}".format(i-1, j),
+                        "xf_{}_{}".format(i-1, j)]
                 for k in range(3):
                     coefs = [1, 1, 1]
                     coefs[k] = -1
                     rows.append([vars, coefs])
                     rhs.append(0)
                     senses += "G"
+        # second quadrant
         for i in range(1, image.shape[0]):
+            for j in range(1, image.shape[1]):
+                vars = ["xr_{}_{}".format(i, j-1),
+                        "xc_{}_{}".format(i-1, j),
+                        "xb_{}_{}".format(i, j-1)]
+                for k in range(3):
+                    coefs = [1, 1, 1]
+                    coefs[k] = -1
+                    rows.append([vars, coefs])
+                    rhs.append(0)
+                    senses += "G"
+        # third quadrant
+        for i in range(image.shape[0]-1):
+            for j in range(1, image.shape[1]):
+                vars = ["xr_{}_{}".format(i, j-1),
+                        "xc_{}_{}".format(i, j),
+                        "xf_{}_{}".format(i, j-1)]
+                for k in range(3):
+                    coefs = [1, 1, 1]
+                    coefs[k] = -1
+                    rows.append([vars, coefs])
+                    rhs.append(0)
+                    senses += "G"
+        # fourth quadrant
+        for i in range(image.shape[0]-1):
             for j in range(image.shape[1]-1):
-                # 3 edges
                 vars = ["xr_{}_{}".format(i, j),
-                        "xc_{}_{}".format(i-1, j+1),
-                        "xb_{}_{}".format(i, j)]
+                        "xc_{}_{}".format(i, j),
+                        "xb_{}_{}".format(i+1, j)]
                 for k in range(3):
                     coefs = [1, 1, 1]
                     coefs[k] = -1
