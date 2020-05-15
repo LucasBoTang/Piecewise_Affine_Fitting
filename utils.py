@@ -8,7 +8,7 @@ def get_derivative(image):
     """
     get absolute second derivative matrix
     """
-    derivative = np.zeros((*image.shape, 2))
+    derivative = np.zeros((*image.shape, 4))
 
     # second derivative on rows
     for i in range(image.shape[0]):
@@ -27,6 +27,38 @@ def get_derivative(image):
     # edge padding
     derivative[0, :, 1] = derivative[1, :, 1]
     derivative[-1, :, 1] = derivative[-2, :, 1]
+
+    # second derivative on forward diagonal
+    for j in range(1, image.shape[1]-1):
+        for i in range(1, image.shape[0]-1):
+            dw2 = image[i-1, j-1] - 2 * image[i, j] + image[i+1, j+1]
+            derivative[i, j, 2] = dw2
+    # edge padding
+    derivative[0, :, 2] = derivative[1, :, 2]
+    derivative[-1, :, 2] = derivative[-2, :, 2]
+    derivative[:, 0, 2] = derivative[:, 1, 2]
+    derivative[:, -1, 2] = derivative[:, -2, 2]
+    # coner padding
+    derivative[0, 0, 2] = derivative[1, 1, 2]
+    derivative[0, -1, 2] = derivative[1, -2, 2]
+    derivative[-1, 0, 2] = derivative[-2, 1, 2]
+    derivative[-1, -1, 2] = derivative[-2, -2, 2]
+
+    # second derivative on backward diagonal
+    for j in range(1, image.shape[1]-1):
+        for i in range(1, image.shape[0]-1):
+            dw2 = image[i+1, j-1] - 2 * image[i, j] + image[i-1, j+1]
+            derivative[i, j, 3] = dw2
+    # edge padding
+    derivative[0, :, 3] = derivative[1, :, 3]
+    derivative[-1, :, 3] = derivative[-2, :, 3]
+    derivative[:, 0, 3] = derivative[:, 1, 3]
+    derivative[:, -1, 3] = derivative[:, -2, 3]
+    # coner padding
+    derivative[0, 0, 3] = derivative[1, 1, 3]
+    derivative[0, -1, 3] = derivative[1, -2, 3]
+    derivative[-1, 0, 3] = derivative[-2, 1, 3]
+    derivative[-1, -1, 3] = derivative[-2, -2, 3]
 
     return np.abs(derivative)
 
@@ -56,11 +88,11 @@ def to_graph(image):
             right = (i, j+1)
             if right in graph.nodes:
                 graph.add_edge(cur, right, connections=1, orth = True)
-            # diagonal edge
+            # forward diagonal edge
             diagonal = (i+1, j+1)
             if diagonal in graph.nodes:
                 graph.add_edge(cur, diagonal, connections=1, orth = False)
-            # cross edge
+            # backward diagonal edge
             cross = (i-1, j+1)
             if cross in graph.nodes:
                 graph.add_edge(cur, cross, connections=1, orth = False)
@@ -141,6 +173,16 @@ def vis_seg(image, model):
             i, j = int(i), int(j)
             if var > 0.01:
                 graph.remove_edge((i,j), (i+1,j))
+        elif name[:2] == "xf":
+            i, j = name.split("_")[1:]
+            i, j = int(i), int(j)
+            if var > 0.01:
+                graph.remove_edge((i,j), (i+1,j+1))
+        elif name[:2] == "xb":
+            i, j = name.split("_")[1:]
+            i, j = int(i), int(j)
+            if var > 0.01:
+                graph.remove_edge((i,j), (i-1,j+1))
 
     # get components
     for k, comp in enumerate(nx.connected_components(graph)):

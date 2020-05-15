@@ -23,6 +23,7 @@ class multicutCallback(LazyConstraintCallback):
         # add multicut constraints
         for path in self.get_multicut(graph, cuts):
             names = self.to_edge(path)
+            print(names)
             coefs = [1] * (len(names) - 1) + [-1]
             self.add(constraint=cplex.SparsePair(ind=names, val=coefs), sense="G", rhs=0)
 
@@ -40,10 +41,14 @@ class multicutCallback(LazyConstraintCallback):
                 drc, i, j = name.split("_")
                 i, j = int(i), int(j)
                 # apply cut
-                if drc == "xr" :
+                if drc == "xr":
                     cut = ((i, j), (i, j+1))
-                else:
+                elif drc == "xc":
                     cut = ((i, j), (i+1, j))
+                elif drc == "xf":
+                    cut = ((i, j), (i+1, j+1))
+                else:
+                    cut = ((i-1, j+1), (i, j))
                 graph.remove_edge(*cut)
                 cuts.append(cut)
 
@@ -142,6 +147,7 @@ class multicutCallback(LazyConstraintCallback):
         names = []
 
         # connect path to cycle
+        print(path)
         cycle = path + [path[0]]
 
         for k in range(len(path)):
