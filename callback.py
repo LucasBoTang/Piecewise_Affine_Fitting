@@ -46,8 +46,10 @@ class multicutCallback(LazyConstraintCallback):
                     cut = ((i, j), (i+1, j))
                 elif drc == "xf":
                     cut = ((i, j), (i+1, j+1))
+                """
                 else:
                     cut = ((i-1, j+1), (i, j))
+                """
                 graph.remove_edge(*cut)
                 cuts.append(cut)
 

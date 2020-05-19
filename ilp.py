@@ -106,6 +106,7 @@ def get_obj(derivative, param2):
             r_colnames.append(name)
             r_obj.append(lambd)
             r_types += "B"
+    """
     # for each backward diagonal
     for i in range(1, derivative.shape[0]):
         for j in range(derivative.shape[1]-1):
@@ -116,6 +117,7 @@ def get_obj(derivative, param2):
             r_colnames.append(name)
             r_obj.append(lambd)
             r_types += "B"
+    """
 
     # concatenate
     colnames = f_colnames + r_colnames
@@ -205,6 +207,7 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
             rhs += [0, 0]
             senses += "LL"
 
+    """
     # big M constraints for backward diagonal
     for i in range(1, derivative.shape[0]-1):
         for j in range(1, derivative.shape[1]-1):
@@ -223,6 +226,7 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
             rows.append([vars, coefs_n])
             rhs += [0, 0]
             senses += "LL"
+    """
 
     # 3-edge cycle multicut constraints
     if cycle3:
@@ -239,6 +243,7 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
                     rows.append([vars, coefs])
                     rhs.append(0)
                     senses += "G"
+        """
         # second quadrant
         for i in range(1, image.shape[0]):
             for j in range(1, image.shape[1]):
@@ -251,6 +256,7 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
                     rows.append([vars, coefs])
                     rhs.append(0)
                     senses += "G"
+        """
         # third quadrant
         for i in range(image.shape[0]-1):
             for j in range(1, image.shape[1]):
@@ -263,6 +269,7 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
                     rows.append([vars, coefs])
                     rhs.append(0)
                     senses += "G"
+        """
         # fourth quadrant
         for i in range(image.shape[0]-1):
             for j in range(image.shape[1]-1):
@@ -275,6 +282,7 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
                     rows.append([vars, coefs])
                     rhs.append(0)
                     senses += "G"
+    """
 
     # 4-edge cycle multicut constraints
     if cycle4:
@@ -352,6 +360,7 @@ def warm_start(model, segmentation):
             else:
                 vars.append(0)
 
+    """
     for i in range(1, segmentation.shape[0]):
         for j in range(segmentation.shape[1]-1):
             names.append("xb_{}_{}".format(i, j))
@@ -359,5 +368,6 @@ def warm_start(model, segmentation):
                 vars.append(1)
             else:
                 vars.append(0)
+    """
 
     model.MIP_starts.add(cplex.SparsePair(ind=names, val=vars), model.MIP_starts.effort_level.solve_fixed, "region_fusion")

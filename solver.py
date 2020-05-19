@@ -16,7 +16,7 @@ np.random.seed(23)
 
 if __name__ == "__main__":
     # choose image and size
-    image = generator.generate_images(5)[2]
+    image = generator.generate_images(10)[1]
 
     # add Guassian noise
     noise = 0.000
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     # build ilp
     model = ilp.build_model(image, 1, 0.5, cycle4=True, cycle8=False, facet=True)
-    timelimit = 60
+    timelimit = 180
     model.parameters.timelimit.set(timelimit)
 
     # warm start

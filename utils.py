@@ -92,10 +92,12 @@ def to_graph(image):
             diagonal = (i+1, j+1)
             if diagonal in graph.nodes:
                 graph.add_edge(cur, diagonal, connections=1, orth = False)
+            """
             # backward diagonal edge
             cross = (i-1, j+1)
             if cross in graph.nodes:
                 graph.add_edge(cur, cross, connections=1, orth = False)
+            """
 
     return graph
 
