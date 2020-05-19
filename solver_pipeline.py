@@ -6,6 +6,10 @@ import time
 import argparse
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
+from matplotlib import cm
+from mpl_toolkits.mplot3d import Axes3D
+import cv2
 
 import heuristics
 import ilp
@@ -45,6 +49,8 @@ if __name__ == "__main__":
     # create folder
     if not os.path.isdir('./res'):
         os.mkdir('./res')
+    if not os.path.isdir('./res/'+filename):
+        os.mkdir('./res/'+filename)
 
     # create table
     df = pd.DataFrame(columns=['time', 'nodes', 'cuts', 'gap', 'obj'])
@@ -102,6 +108,30 @@ if __name__ == "__main__":
 
         # add data
         df = df.append(pd.Series([elapse, nodes, cuts, gap, obj], index=df.columns), ignore_index=True)
+
+        # visualize segmentation
+        segmentations = utils.vis_seg(image, model)
+        fig = plt.figure()
+        plt.imshow(segmentations)
+        plt.savefig('./res/{}/{}-seg.png'.format(filename, i))
+        #plt.show()
+
+        # visualize depth
+        depth = utils.reconstruct(image, model)
+        fig = plt.figure()
+        plt.imshow(depth)
+        #plt.show()
+        cv2.imwrite('./res/{}/{}-depth.png'.format(filename, i), (depth*255).astype(np.uint8))
+
+        # visualize 3d input signal
+        X = np.arange(depth.shape[1])
+        Y = np.arange(depth.shape[0])
+        X, Y = np.meshgrid(X, Y)
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+        surf = ax.plot_surface(X, Y, depth, cmap=cm.jet, linewidth=0, antialiased=False)
+        plt.savefig('./res/{}/{}-3d.png'.format(filename, i))
+        #plt.show()
 
     # save data
     df.to_csv('./res/{}.csv'.format(filename))
