@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     # set parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('--size', type=int, default=5)
+    parser.add_argument('--size', type=int, default=5, choices=[5, 10, 20])
     parser.add_argument('--noise', type=float, default=0.0)
     parser.add_argument('--timelimit', type=int, default=600)
     parser.add_argument('--type', type=str, default='synth', choices=['synth', 'real'])
