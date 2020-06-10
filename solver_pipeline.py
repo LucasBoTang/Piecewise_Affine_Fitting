@@ -25,7 +25,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--size', type=int, default=5, choices=[5, 10, 20])
     parser.add_argument('--noise', type=float, default=0.0)
-    parser.add_argument('--timelimit', type=int, default=600)
+    parser.add_argument('--timelimit', type=int, default=0)
     parser.add_argument('--type', type=str, default='synth', choices=['synth', 'real'])
     parser.add_argument('--cycle3', action='store_true', default=False)
     parser.add_argument('--cycle4', action='store_true', default=False)
@@ -52,8 +52,13 @@ if __name__ == "__main__":
     if not os.path.isdir('./res/'+filename):
         os.mkdir('./res/'+filename)
 
-    # create table
-    df = pd.DataFrame(columns=['time', 'nodes', 'cuts', 'gap', 'obj'])
+    if os.path.isfile('./res/{}.csv'.format(filename)):
+        # read tabele
+        df = pd.read_csv('./res/{}.csv'.format(filename), index_col=0)
+        print(df.head())
+    else:
+        # create table
+        df = pd.DataFrame(columns=['image', 'time', 'nodes', 'cuts', 'gap', 'obj'])
 
     # load images
     images = generator.generate_images(args.size)
@@ -66,7 +71,7 @@ if __name__ == "__main__":
 
     for i in index:
         print("Loading image {}...".format(i))
-        image = images[i]
+        name, image = images[i]
         image = image + args.noise * np.random.normal(loc=0.0, scale=1.0, size=image.shape)
         image = np.clip(image, 0, 1)
 
@@ -81,7 +86,10 @@ if __name__ == "__main__":
                                                cycle4=args.cycle4,
                                                cycle8=args.cycle8,
                                                facet=True)
-        model.parameters.timelimit.set(args.timelimit)
+
+        # no limitation when timelimit == 0
+        if args.timelimit:
+            model.parameters.timelimit.set(args.timelimit)
 
         # warm start
         ilp.warm_start(model, heuristic_seg)
@@ -107,7 +115,7 @@ if __name__ == "__main__":
         print("Objective value:", obj)
 
         # add data
-        df = df.append(pd.Series([elapse, nodes, cuts, gap, obj], index=df.columns), ignore_index=True)
+        df = df.append(pd.Series([name, elapse, nodes, cuts, gap, obj], index=df.columns), ignore_index=True)
 
         # visualize segmentation
         segmentations = utils.vis_seg(image, model)
@@ -133,5 +141,5 @@ if __name__ == "__main__":
         plt.savefig('./res/{}/{}-3d.png'.format(filename, i))
         #plt.show()
 
-    # save data
-    df.to_csv('./res/{}.csv'.format(filename))
+        # save data
+        df.to_csv('./res/{}.csv'.format(filename))

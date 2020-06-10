@@ -46,8 +46,10 @@ class multicutCallback(LazyConstraintCallback):
                     cut = ((i, j), (i+1, j))
                 elif drc == "xf":
                     cut = ((i, j), (i+1, j+1))
+                elif drc == "xb":
+                    cut = ((i, j), (i-1, j+1))
                 else:
-                    cut = ((i-1, j+1), (i, j))
+                    raise SystemExit("Edge variable is wrong")
                 graph.remove_edge(*cut)
                 cuts.append(cut)
 
@@ -60,8 +62,8 @@ class multicutCallback(LazyConstraintCallback):
         # get connected components
         h, w = 1, 1
         for i, j in graph.nodes:
-            h, w = max(h, i), max(w, j)
-        components_map = np.zeros((h+1, w+1), dtype=int)
+            h, w = max(h+1, i), max(w+1, j)
+        components_map = np.zeros((h, w), dtype=int)
         for k, comp in enumerate(nx.connected_components(graph)):
             for i, j in comp:
                 components_map[i, j] = k

@@ -1,2 +1,5 @@
 
 *.pyc
+res/*
+res/log.csv
+depth.png

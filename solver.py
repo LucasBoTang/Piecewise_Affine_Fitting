@@ -16,7 +16,7 @@ np.random.seed(23)
 
 if __name__ == "__main__":
     # choose image and size
-    image = generator.generate_images(5)[2]
+    _, image = generator.generate_images(5)[1]
 
     # add Guassian noise
     noise = 0.000
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     plt.show()
 
     # build ilp
-    model = ilp.build_model(image, 1, 0.5, cycle4=True, cycle8=False, facet=True)
+    model = ilp.build_model(image, 1, 0.5, cycle3=True, cycle4=True, cycle8=False, facet=True)
     timelimit = 60
     model.parameters.timelimit.set(timelimit)
 
