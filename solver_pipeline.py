@@ -19,20 +19,7 @@ import generator
 # random seed
 np.random.seed(23)
 
-if __name__ == "__main__":
-
-    # set parser
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--size', type=int, default=5, choices=[5, 10, 20])
-    parser.add_argument('--noise', type=float, default=0.0)
-    parser.add_argument('--timelimit', type=int, default=0)
-    parser.add_argument('--type', type=str, default='synth', choices=['synth', 'real'])
-    parser.add_argument('--cycle3', action='store_true', default=False)
-    parser.add_argument('--cycle4', action='store_true', default=False)
-    parser.add_argument('--cycle8', action='store_true', default=False)
-
-    # get args
-    args = parser.parse_args()
+def pipeline(args):
 
     # file name
     filename = 'log_{}_{}_{}'.format(args.size, args.noise, args.timelimit)
@@ -78,8 +65,9 @@ if __name__ == "__main__":
         tick = time.time()
 
         # initialize with hueristic method
-        heuristic_graph = heuristics.solve(image, 0.02)
-        heuristic_seg, heuristics_output = utils.graph_to_image(heuristic_graph)
+        if not args.noheur:
+            heuristic_graph = heuristics.solve(image, 0.02)
+            heuristic_seg, heuristics_output = utils.graph_to_image(heuristic_graph)
 
         # build ilp
         model = ilp.build_model(image, 1, 0.5, cycle3=args.cycle3,
@@ -92,7 +80,8 @@ if __name__ == "__main__":
             model.parameters.timelimit.set(args.timelimit)
 
         # warm start
-        ilp.warm_start(model, heuristic_seg)
+        if not args.noheur:
+            ilp.warm_start(model, heuristic_seg)
 
         # solve ilp
         print("Solving ilp with b&c...")
@@ -143,3 +132,23 @@ if __name__ == "__main__":
 
         # save data
         df.to_csv('./res/{}.csv'.format(filename))
+
+
+if __name__ == "__main__":
+
+    # set parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--size', type=int, default=5, choices=[5, 10, 20])
+    parser.add_argument('--noise', type=float, default=0.0)
+    parser.add_argument('--timelimit', type=int, default=0)
+    parser.add_argument('--type', type=str, default='synth', choices=['synth', 'real'])
+    parser.add_argument('--noheur', action='store_true', default=False)
+    parser.add_argument('--cycle3', action='store_true', default=False)
+    parser.add_argument('--cycle4', action='store_true', default=False)
+    parser.add_argument('--cycle8', action='store_true', default=False)
+
+    # get args
+    args = parser.parse_args()
+    
+    # run experiment
+    pipeline(args)
