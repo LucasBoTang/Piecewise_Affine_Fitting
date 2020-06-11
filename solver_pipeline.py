@@ -24,6 +24,8 @@ def pipeline(args):
     # file name
     filename = 'log_{}_{}_{}'.format(args.size, args.noise, args.timelimit)
     cycles = []
+    if args.noheur:
+       filename += '_' + 'noheur'
     if args.cycle3:
         cycles.append('3')
     if args.cycle4:
@@ -32,12 +34,17 @@ def pipeline(args):
         cycles.append('8')
     if len(cycles) > 0:
         filename += '_' + '+'.join(cycles)
+    if args.facet:
+        filename += '_' + 'facet'
 
     # create folder
     if not os.path.isdir('./res'):
         os.mkdir('./res')
     if not os.path.isdir('./res/'+filename):
         os.mkdir('./res/'+filename)
+    print('Save log to ./res/'+filename)
+    print()
+    print()
 
     if os.path.isfile('./res/{}.csv'.format(filename)):
         # read tabele
@@ -73,7 +80,7 @@ def pipeline(args):
         model = ilp.build_model(image, 1, 0.5, cycle3=args.cycle3,
                                                cycle4=args.cycle4,
                                                cycle8=args.cycle8,
-                                               facet=True)
+                                               facet=args.facet)
 
         # no limitation when timelimit == 0
         if args.timelimit:
@@ -87,48 +94,63 @@ def pipeline(args):
         print("Solving ilp with b&c...")
         model.solve()
 
+        print(model.solution.get_status())
+
         tock = time.time()
         elapse = tock - tick
         print("Time elpase:", elapse)
 
-        gap = model.solution.MIP.get_mip_relative_gap()
-        print("MIP relative gap:", gap)
+        try:
+            gap = model.solution.MIP.get_mip_relative_gap()
+            print("MIP relative gap:", gap)
 
-        nodes = model.solution.progress.get_num_nodes_processed()
-        print("Number of nodes:", nodes)
+            nodes = model.solution.progress.get_num_nodes_processed()
+            print("Number of nodes:", nodes)
 
-        cuts = model.solution.MIP.get_num_cuts(model.solution.MIP.cut_type.user)
-        print("Number of user applied cuts:", cuts)
+            cuts = model.solution.MIP.get_num_cuts(model.solution.MIP.cut_type.user)
+            print("Number of user applied cuts:", cuts)
 
-        obj = model.solution.get_objective_value()
-        print("Objective value:", obj)
+            obj = model.solution.get_objective_value()
+            print("Objective value:", obj)
+
+            # visualize segmentation
+            segmentations = utils.vis_seg(image, model)
+            fig = plt.figure()
+            plt.imshow(segmentations)
+            plt.savefig('./res/{}/{}-seg.png'.format(filename, i))
+            #plt.show()
+            plt.close()
+
+            # visualize depth
+            depth = utils.reconstruct(image, model)
+            fig = plt.figure()
+            plt.imshow(depth)
+            #plt.show()
+            cv2.imwrite('./res/{}/{}-depth.png'.format(filename, i), (depth*255).astype(np.uint8))
+            plt.close()
+
+            # visualize 3d input signal
+            X = np.arange(depth.shape[1])
+            Y = np.arange(depth.shape[0])
+            X, Y = np.meshgrid(X, Y)
+            fig = plt.figure()
+            ax = fig.gca(projection='3d')
+            surf = ax.plot_surface(X, Y, depth, cmap=cm.jet, linewidth=0, antialiased=False)
+            plt.savefig('./res/{}/{}-3d.png'.format(filename, i))
+            #plt.show()
+            plt.close()
+
+        except:
+            gap = '-'
+            nodes = model.solution.progress.get_num_nodes_processed()
+            cuts = model.solution.MIP.get_num_cuts(model.solution.MIP.cut_type.user)
+            obj = '-'
+
+        print()
+        print()
 
         # add data
         df = df.append(pd.Series([name, elapse, nodes, cuts, gap, obj], index=df.columns), ignore_index=True)
-
-        # visualize segmentation
-        segmentations = utils.vis_seg(image, model)
-        fig = plt.figure()
-        plt.imshow(segmentations)
-        plt.savefig('./res/{}/{}-seg.png'.format(filename, i))
-        #plt.show()
-
-        # visualize depth
-        depth = utils.reconstruct(image, model)
-        fig = plt.figure()
-        plt.imshow(depth)
-        #plt.show()
-        cv2.imwrite('./res/{}/{}-depth.png'.format(filename, i), (depth*255).astype(np.uint8))
-
-        # visualize 3d input signal
-        X = np.arange(depth.shape[1])
-        Y = np.arange(depth.shape[0])
-        X, Y = np.meshgrid(X, Y)
-        fig = plt.figure()
-        ax = fig.gca(projection='3d')
-        surf = ax.plot_surface(X, Y, depth, cmap=cm.jet, linewidth=0, antialiased=False)
-        plt.savefig('./res/{}/{}-3d.png'.format(filename, i))
-        #plt.show()
 
         # save data
         df.to_csv('./res/{}.csv'.format(filename))
@@ -146,9 +168,10 @@ if __name__ == "__main__":
     parser.add_argument('--cycle3', action='store_true', default=False)
     parser.add_argument('--cycle4', action='store_true', default=False)
     parser.add_argument('--cycle8', action='store_true', default=False)
+    parser.add_argument('--facet', action='store_true', default=False)
 
     # get args
     args = parser.parse_args()
-    
+
     # run experiment
     pipeline(args)
