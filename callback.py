@@ -75,7 +75,7 @@ class multicutCallback(LazyConstraintCallback):
                 violated_cuts.append(((i1, j1), (i2, j2)))
 
         if violated_cuts:
-            print("Adding cuts...")
+            print("Adding cuts for {} violations...".format(len(violated_cuts)))
 
         # dfs to find facet defining paths
         paths = []
@@ -125,7 +125,7 @@ class multicutCallback(LazyConstraintCallback):
             return paths
 
         # cut long path
-        if len(visited) > 10:
+        if len(visited) > 5:
             return paths
 
         # dfs
