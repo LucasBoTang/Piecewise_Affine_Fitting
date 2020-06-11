@@ -22,7 +22,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # setting
-    args.timelimit = 1
+    #args.timelimit = 1
     settings = {'size': [5, 10, 20],
                 'noise': [0, 0.001, 0.005]}
 
