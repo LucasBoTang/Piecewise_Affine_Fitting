@@ -161,7 +161,7 @@ if __name__ == "__main__":
     # set parser
     parser = argparse.ArgumentParser()
     parser.add_argument('--size', type=int, default=5, choices=[5, 10, 20])
-    parser.add_argument('--noise', type=float, default=0.0)
+    parser.add_argument('--noise', type=float, default=0.0, choices=[0, 0.001, 0.005])
     parser.add_argument('--timelimit', type=int, default=0)
     parser.add_argument('--type', type=str, default='synth', choices=['synth', 'real'])
     parser.add_argument('--noheur', action='store_true', default=False)
