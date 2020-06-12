@@ -16,10 +16,10 @@ np.random.seed(23)
 
 if __name__ == "__main__":
     # choose image and size
-    image = generator.generate_images(5)[3]
+    _, image = generator.generate_images(5)[0]
 
     # add Guassian noise
-    noise = 0.005
+    noise = 0.00#5
     image = image + noise * np.random.normal(loc=0.0, scale=1.0, size=image.shape)
     image = np.clip(image, 0, 1)
 

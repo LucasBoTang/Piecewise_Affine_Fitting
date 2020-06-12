@@ -161,11 +161,8 @@ def region_fuse(graph, beta):
         wu = graph.nodes[u]["weight"]
         Yu = graph.nodes[u]["affine_params"]
 
-        # go through orthogonal neighbors
+        # go through neighbors
         for v in list(graph.neighbors(u)):
-            # skip diagonal edges
-            if not graph.edges[u, v]["orth"]:
-                continue
             # get attributes of v
             wv = graph.nodes[v]["weight"]
             Yv = graph.nodes[v]["affine_params"]
@@ -206,15 +203,15 @@ def contract(graph, u, v):
     else:
         graph.nodes[u]["affine_params"] = (wu * Yu + wv * Yv) / (wu + wv)
 
+
     # combine edges
     if v in graph.neighbors(u):
         graph.remove_edge(u, v)
     for k in graph.neighbors(v):
         if k in graph.neighbors(u):
             graph.edges[u, k]["connections"] += graph.edges[v, k]["connections"]
-            graph.edges[u, k]["orth"] |= graph.edges[v, k]["orth"]
         else:
-            graph.add_edge(u, k, connections=graph.edges[v, k]["connections"], orth=graph.edges[v, k]["orth"])
+            graph.add_edge(u, k, connections=graph.edges[v, k]["connections"])
 
     # remove node v
     graph.remove_node(v)
