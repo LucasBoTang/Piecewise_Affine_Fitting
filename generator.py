@@ -24,7 +24,7 @@ def generate_images(size):
     for j in range(image.shape[1]):
         image[:, j] -= 0.03 * grid[:, j] * j / size
         image[:, j] += 0.02 * (1 - grid[:, j]) * j / size
-    images.append(image)
+    images.append((0, image))
 
     # image 1
     image = np.zeros((4*size, 6*size)) + 0.1
@@ -38,11 +38,11 @@ def generate_images(size):
     image[0, 4*size] = 1
     for i in range(3*size):
         for j in range(4*size, 5*size):
-            image[i, j] = 1 - i * (j - 4*size) * (0.24 / size ** 2)
+            image[i, j] = 1 - i * (0.05 / size) - (j - size * 4)* (0.4 / size)
     for i in range(size//2):
         for j in range(1*size-i):
             image[3*size+i+j, 1*size+j] = 0.7
-    images.append(image)
+    images.append((1, image))
 
     # image 2
     image = np.zeros((4*size, 6*size)) + 0.5
@@ -56,7 +56,7 @@ def generate_images(size):
         image[i, 4*size] = image[i-1, 4*size] - (0.08 / size)
     for j in range(4*size+1, 5*size+size//2):
         image[2*size:3*size+size//2, j] = image[2*size:3*size+size//2, j-1] - (0.06 / size)
-    images.append(image)
+    images.append((2, image))
 
     # image 3
     disp = cv2.imread("./data/image3.png", 0)
@@ -66,7 +66,7 @@ def generate_images(size):
     ratio = np.sqrt(24 * size ** 2 / (h * w))
     h, w = int(h * ratio), int(w * ratio)
     image = cv2.resize(image, (w, h))
-    images.append(image)
+    images.append((3, image))
 
     disp = cv2.imread("./data/image4.png", 0)
     image = disp_to_depth(disp)
@@ -75,7 +75,7 @@ def generate_images(size):
     ratio = np.sqrt(24 * size ** 2 / (h * w))
     h, w = int(h * ratio), int(w * ratio)
     image = cv2.resize(image, (w, h))
-    images.append(image)
+    images.append((4, image))
 
     disp = cv2.imread("./data/image5.png", 0)
     image = disp_to_depth(disp)
@@ -84,7 +84,7 @@ def generate_images(size):
     ratio = np.sqrt(24 * size ** 2 / (h * w))
     h, w = int(h * ratio), int(w * ratio)
     image = cv2.resize(image, (w, h))
-    images.append(image)
+    images.append((5,image))
 
     return images
 
