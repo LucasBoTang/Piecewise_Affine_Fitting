@@ -16,15 +16,15 @@ np.random.seed(23)
 
 if __name__ == "__main__":
     # choose image and size
-    _, image = generator.generate_images(5)[1]
+    _, image = generator.generate_images(10)[1]
 
     # add Guassian noise
-    noise = 0.000
+    noise = 0.005
     image = image + noise * np.random.normal(loc=0.0, scale=1.0, size=image.shape)
     image = np.clip(image, 0, 1)
 
     # visualize input signal
-    plt.imshow(image)
+    plt.imshow(image, cmap='jet')
     plt.show()
 
     # visualize 3d input signal
@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
     # visualize depth
     depth = utils.reconstruct(image, model)
-    plt.imshow(depth)
+    plt.imshow(depth, cmap='jet')
     plt.show()
     cv2.imwrite('./depth.png', (depth*255).astype(np.uint8))
 
