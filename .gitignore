@@ -1,4 +1,5 @@
 
 *.pyc
 /res/*
+/images/*
 depth.png
