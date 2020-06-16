@@ -3,6 +3,9 @@
 
 import networkx as nx
 import numpy as np
+import random
+from collections import defaultdict
+from sklearn.linear_model import LinearRegression
 
 def get_derivative(image):
     """
@@ -206,3 +209,31 @@ def reconstruct(image, model):
             depth[i, j] = var
 
     return depth
+
+def check_plane(segmentations, depth):
+    """
+    check fitting result is piecewise or not
+    """
+    # collect points
+    segmentations_set = defaultdict(list)
+    for i in range(segmentations.shape[0]):
+        for j in range(segmentations.shape[1]):
+            segmentations_set[segmentations[i,j]].append([[i, j], depth[i,j]])
+    # check points
+    is_plane = True
+    for i in segmentations_set:
+        X, Y = [], []
+        for x, y in random.sample(segmentations_set[i], min(10, len(segmentations_set[i]))):
+            X.append(x)
+            Y.append(y)
+        # linear regression
+        reg = LinearRegression().fit(X, Y)
+        # predict
+        X, Y = [], []
+        for x, y in segmentations_set[i]:
+            X.append(x)
+            Y.append(y)
+        Y_pred = reg.predict(X)
+        is_plane &= np.all((Y - Y_pred) < 10e-4)
+
+    return is_plane

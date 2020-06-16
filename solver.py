@@ -16,10 +16,10 @@ np.random.seed(23)
 
 if __name__ == "__main__":
     # choose image and size
-    _, image = generator.generate_images(10)[1]
+    _, image = generator.generate_images(5)[0]
 
     # add Guassian noise
-    noise = 0.005
+    noise = 0.001
     image = image + noise * np.random.normal(loc=0.0, scale=1.0, size=image.shape)
     image = np.clip(image, 0, 1)
 
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     # build ilp
     model = ilp.build_model(image, 1, 0.5, cycle3=True, cycle4=True, cycle8=False, facet=True)
-    timelimit = 60
+    timelimit = 600
     model.parameters.timelimit.set(timelimit)
 
     # warm start
@@ -84,3 +84,6 @@ if __name__ == "__main__":
     ax = fig.gca(projection='3d')
     surf = ax.plot_surface(X, Y, depth, cmap=cm.jet, linewidth=0, antialiased=False)
     plt.show()
+
+    if not utils.check_plane(segmentations, depth):
+        print("The solution includes non-planar surfaces")
