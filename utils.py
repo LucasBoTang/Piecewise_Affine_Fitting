@@ -2,8 +2,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+from collections import defaultdict
+import random
 import networkx as nx
 import numpy as np
+from sklearn.linear_model import LinearRegression
 
 def get_derivative(image):
     """

@@ -4,6 +4,7 @@
 from matplotlib import pyplot as plt
 from matplotlib import cm
 from mpl_toolkits.mplot3d import Axes3D
+from sklearn.linear_model import LinearRegression
 import cv2
 import numpy as np
 import heuristics
@@ -19,7 +20,7 @@ if __name__ == "__main__":
     _, image = generator.generate_images(5)[0]
 
     # add Guassian noise
-    noise = 0.00#5
+    noise = 0.001
     image = image + noise * np.random.normal(loc=0.0, scale=1.0, size=image.shape)
     image = np.clip(image, 0, 1)
 
@@ -84,3 +85,6 @@ if __name__ == "__main__":
     ax = fig.gca(projection='3d')
     surf = ax.plot_surface(X, Y, depth, cmap=cm.jet, linewidth=0, antialiased=False)
     plt.show()
+
+    if not utils.check_plane(segmentations, depth):
+        print("The solution includes non-planar surfaces")
