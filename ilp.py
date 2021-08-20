@@ -100,7 +100,8 @@ def get_obj(derivative, param2):
     for i in range(derivative.shape[0]-1):
         for j in range(derivative.shape[1]-1):
             diag = derivative[:,:,2].diagonal(j-i)
-            assert derivative[i,j,2] in diag
+            if derivative[i,j,2] not in diag:
+                raise AssertionError
             lambd = param2 * max(np.max(diag), 0.2) / 2
             name = "xf_{}_{}".format(i, j)
             r_colnames.append(name)
@@ -110,7 +111,8 @@ def get_obj(derivative, param2):
     for i in range(1, derivative.shape[0]):
         for j in range(derivative.shape[1]-1):
             diag = np.rot90(derivative[:,:,3]).diagonal(i+j-derivative.shape[1]+1)
-            assert derivative[i,j,3] in diag
+            if derivative[i,j,3] not in diag:
+                raise AssertionError
             lambd = param2 * max(np.max(diag), 0.2) / 2
             name = "xb_{}_{}".format(i, j)
             r_colnames.append(name)
