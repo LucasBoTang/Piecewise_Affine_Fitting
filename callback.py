@@ -2,9 +2,9 @@
 # coding: utf-8
 
 import cplex
-from cplex.callbacks import LazyConstraintCallback, IncumbentCallback, HeuristicCallback
-import numpy as np
 import networkx as nx
+import numpy as np
+from cplex.callbacks import HeuristicCallback, IncumbentCallback, LazyConstraintCallback
 
 
 class multicutCallback(LazyConstraintCallback):
@@ -24,7 +24,9 @@ class multicutCallback(LazyConstraintCallback):
         for path in self.get_multicut(graph, cuts):
             names = self.to_edge(path)
             coefs = [1] * (len(names) - 1) + [-1]
-            self.add(constraint=cplex.SparsePair(ind=names, val=coefs), sense="G", rhs=0)
+            self.add(constraint=cplex.SparsePair(ind=names, val=coefs),
+                     sense="G",
+                     rhs=0)
 
     def cut_graph(self):
         """
@@ -41,13 +43,13 @@ class multicutCallback(LazyConstraintCallback):
                 i, j = int(i), int(j)
                 # apply cut
                 if drc == "xr":
-                    cut = ((i, j), (i, j+1))
+                    cut = ((i, j), (i, j + 1))
                 elif drc == "xc":
-                    cut = ((i, j), (i+1, j))
+                    cut = ((i, j), (i + 1, j))
                 elif drc == "xf":
-                    cut = ((i, j), (i+1, j+1))
+                    cut = ((i, j), (i + 1, j + 1))
                 elif drc == "xb":
-                    cut = ((i, j), (i-1, j+1))
+                    cut = ((i, j), (i - 1, j + 1))
                 else:
                     raise SystemExit("Edge variable is wrong")
                 graph.remove_edge(*cut)
@@ -62,7 +64,7 @@ class multicutCallback(LazyConstraintCallback):
         # get connected components
         h, w = 1, 1
         for i, j in graph.nodes:
-            h, w = max(h+1, i), max(w+1, j)
+            h, w = max(h + 1, i), max(w + 1, j)
         components_map = np.zeros((h, w), dtype=int)
         for k, comp in enumerate(nx.connected_components(graph)):
             for i, j in comp:
@@ -75,7 +77,8 @@ class multicutCallback(LazyConstraintCallback):
                 violated_cuts.append(((i1, j1), (i2, j2)))
 
         if violated_cuts:
-            print("Adding cuts for {} violations...".format(len(violated_cuts)))
+            print("Adding cuts for {} violations...".format(
+                len(violated_cuts)))
 
         # dfs to find facet defining paths
         paths = []
@@ -112,16 +115,16 @@ class multicutCallback(LazyConstraintCallback):
             if len(visited) > 2:
                 banned = banned + list(graph.neighbors(visited[-3]))
             if cur in banned:
-                #print("Ban!")
+                # print("Ban!")
                 return paths
 
         # visualize dfs
-        #self._vis_dfs(visited, graph)
+        # self._vis_dfs(visited, graph)
 
         # reach sink
         if cur == sink:
             paths.append(visited)
-            #print("Find!")
+            # print("Find!")
             return paths
 
         # cut long path
@@ -153,7 +156,7 @@ class multicutCallback(LazyConstraintCallback):
         for k in range(len(path)):
             # kth edge
             i1, j1 = cycle[k]
-            i2, j2 = cycle[k+1]
+            i2, j2 = cycle[k + 1]
             # sort
             if i1 > i2:
                 i1, i2 = i2, i1
@@ -185,7 +188,7 @@ class multicutCallback(LazyConstraintCallback):
         # image size
         h, w = 0, 0
         for i, j in graph.nodes:
-            h, w = max(i+1, h), max(j+1, w)
+            h, w = max(i + 1, h), max(j + 1, w)
         img = np.zeros((h, w))
 
         # mark path
@@ -194,6 +197,7 @@ class multicutCallback(LazyConstraintCallback):
 
         # visualize
         from matplotlib import pyplot as plt
+
         plt.imshow(img)
         plt.show()
 
@@ -227,22 +231,22 @@ class cutremoveCallback(IncumbentCallback, HeuristicCallback):
                 i, j = name.split("_")[1:]
                 i, j = int(i), int(j)
                 output[i, j] = var
-        output = output[:i+1, :j+1]
+        output = output[:i + 1, :j + 1]
 
         # calculate derivative
         derivative = np.zeros((*output.shape, 2))
         # second derivative on rows
         for i in range(output.shape[0]):
-            for j in range(1, output.shape[1]-1):
-                dw2 = output[i, j-1] - 2 * output[i, j] + output[i, j+1]
+            for j in range(1, output.shape[1] - 1):
+                dw2 = output[i, j - 1] - 2 * output[i, j] + output[i, j + 1]
                 derivative[i, j, 0] = dw2
         # edge padding
         derivative[:, 0, 0] = derivative[:, 1, 0]
         derivative[:, -1, 0] = derivative[:, -2, 0]
         # second derivative on columns
         for j in range(output.shape[1]):
-            for i in range(1, output.shape[0]-1):
-                dw2 = output[i-1, j] - 2 * output[i, j] + output[i+1, j]
+            for i in range(1, output.shape[0] - 1):
+                dw2 = output[i - 1, j] - 2 * output[i, j] + output[i + 1, j]
                 derivative[i, j, 1] = dw2
         # edge padding
         derivative[0, :, 1] = derivative[1, :, 1]
@@ -257,16 +261,16 @@ class cutremoveCallback(IncumbentCallback, HeuristicCallback):
         unnecessary_cuts = set()
         # check rows
         for i in range(derivative.shape[0]):
-            for j in range(derivative.shape[1]-1):
+            for j in range(derivative.shape[1] - 1):
                 if derivative[i, j, 0] < 0.1:
                     unnecessary_cuts.add("xr_{}_{}".format(i, j))
-                    unnecessary_cuts.add("xr_{}_{}".format(i, j+1))
+                    unnecessary_cuts.add("xr_{}_{}".format(i, j + 1))
 
         # check columns
-        for j in range(derivative.shape[0]-1):
+        for j in range(derivative.shape[0] - 1):
             for i in range(derivative.shape[1]):
                 if derivative[i, j, 1] < 0.1:
                     unnecessary_cuts.add("xc_{}_{}".format(i, j))
-                    unnecessary_cuts.add("xc_{}_{}".format(i+1, j))
+                    unnecessary_cuts.add("xc_{}_{}".format(i + 1, j))
 
         return unnecessary_cuts
