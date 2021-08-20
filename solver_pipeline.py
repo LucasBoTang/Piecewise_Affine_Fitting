@@ -1,58 +1,61 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import argparse
 import os
 import time
-import argparse
+
+import cv2
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 from matplotlib import cm
+from matplotlib import pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-import cv2
 
+import generator
 import heuristics
 import ilp
 import utils
-import generator
 
 # random seed
 np.random.seed(23)
 
+
 def pipeline(args):
 
     # file name
-    filename = 'log_{}_{}_{}'.format(args.size, args.noise, args.timelimit)
+    filename = "log_{}_{}_{}".format(args.size, args.noise, args.timelimit)
     cycles = []
     if args.noheur:
-       filename += '_' + 'noheur'
+        filename += "_" + "noheur"
     if args.cycle3:
-        cycles.append('3')
+        cycles.append("3")
     if args.cycle4:
-        cycles.append('4')
+        cycles.append("4")
     if args.cycle8:
-        cycles.append('8')
+        cycles.append("8")
     if len(cycles) > 0:
-        filename += '_' + '+'.join(cycles)
+        filename += "_" + "+".join(cycles)
     if args.facet:
-        filename += '_' + 'facet'
+        filename += "_" + "facet"
 
     # create folder
-    if not os.path.isdir('./res'):
-        os.mkdir('./res')
-    if not os.path.isdir('./res/'+filename):
-        os.mkdir('./res/'+filename)
-    print('Save log to ./res/'+filename)
+    if not os.path.isdir("./res"):
+        os.mkdir("./res")
+    if not os.path.isdir("./res/" + filename):
+        os.mkdir("./res/" + filename)
+    print("Save log to ./res/" + filename)
     print()
     print()
 
-    if os.path.isfile('./res/{}.csv'.format(filename)):
+    if os.path.isfile("./res/{}.csv".format(filename)):
         # read tabele
-        df = pd.read_csv('./res/{}.csv'.format(filename), index_col=0)
+        df = pd.read_csv("./res/{}.csv".format(filename), index_col=0)
         print(df.head())
     else:
         # create table
-        df = pd.DataFrame(columns=['image', 'time', 'nodes', 'cuts', 'gap', 'obj'])
+        df = pd.DataFrame(
+            columns=["image", "time", "nodes", "cuts", "gap", "obj"])
 
     # load images
     images = generator.generate_images(args.size)
@@ -66,7 +69,8 @@ def pipeline(args):
     for i in index:
         print("Loading image {}...".format(i))
         name, image = images[i]
-        image = image + args.noise * np.random.normal(loc=0.0, scale=1.0, size=image.shape)
+        image = image + args.noise * np.random.normal(
+            loc=0.0, scale=1.0, size=image.shape)
         image = np.clip(image, 0, 1)
 
         tick = time.time()
@@ -74,13 +78,19 @@ def pipeline(args):
         # initialize with hueristic method
         if not args.noheur:
             heuristic_graph = heuristics.solve(image, 0.02)
-            heuristic_seg, heuristics_output = utils.graph_to_image(heuristic_graph)
+            heuristic_seg, heuristics_output = utils.graph_to_image(
+                heuristic_graph)
 
         # build ilp
-        model = ilp.build_model(image, 1, 0.5, cycle3=args.cycle3,
-                                               cycle4=args.cycle4,
-                                               cycle8=args.cycle8,
-                                               facet=args.facet)
+        model = ilp.build_model(
+            image,
+            1,
+            0.5,
+            cycle3=args.cycle3,
+            cycle4=args.cycle4,
+            cycle8=args.cycle8,
+            facet=args.facet,
+        )
 
         # no limitation when timelimit == 0
         if args.timelimit:
@@ -107,7 +117,8 @@ def pipeline(args):
             nodes = model.solution.progress.get_num_nodes_processed()
             print("Number of nodes:", nodes)
 
-            cuts = model.solution.MIP.get_num_cuts(model.solution.MIP.cut_type.user)
+            cuts = model.solution.MIP.get_num_cuts(
+                model.solution.MIP.cut_type.user)
             print("Number of user applied cuts:", cuts)
 
             obj = model.solution.get_objective_value()
@@ -117,16 +128,19 @@ def pipeline(args):
             segmentations = utils.vis_seg(image, model)
             fig = plt.figure()
             plt.imshow(segmentations)
-            plt.savefig('./res/{}/{}-seg.png'.format(filename, i))
-            #plt.show()
+            plt.savefig("./res/{}/{}-seg.png".format(filename, i))
+            # plt.show()
             plt.close()
 
             # visualize depth
             depth = utils.reconstruct(image, model)
             fig = plt.figure()
             plt.imshow(depth)
-            #plt.show()
-            cv2.imwrite('./res/{}/{}-depth.png'.format(filename, i), (depth*255).astype(np.uint8))
+            # plt.show()
+            cv2.imwrite(
+                "./res/{}/{}-depth.png".format(filename, i),
+                (depth * 255).astype(np.uint8),
+            )
             plt.close()
 
             # visualize 3d input signal
@@ -134,41 +148,56 @@ def pipeline(args):
             Y = np.arange(depth.shape[0])
             X, Y = np.meshgrid(X, Y)
             fig = plt.figure()
-            ax = fig.gca(projection='3d')
-            surf = ax.plot_surface(X, Y, depth, cmap=cm.jet, linewidth=0, antialiased=False)
-            plt.savefig('./res/{}/{}-3d.png'.format(filename, i))
-            #plt.show()
+            ax = fig.gca(projection="3d")
+            surf = ax.plot_surface(X,
+                                   Y,
+                                   depth,
+                                   cmap=cm.jet,
+                                   linewidth=0,
+                                   antialiased=False)
+            plt.savefig("./res/{}/{}-3d.png".format(filename, i))
+            # plt.show()
             plt.close()
 
         except:
-            gap = '-'
+            gap = "-"
             nodes = model.solution.progress.get_num_nodes_processed()
-            cuts = model.solution.MIP.get_num_cuts(model.solution.MIP.cut_type.user)
-            obj = '-'
+            cuts = model.solution.MIP.get_num_cuts(
+                model.solution.MIP.cut_type.user)
+            obj = "-"
 
         print()
         print()
 
         # add data
-        df = df.append(pd.Series([name, elapse, nodes, cuts, gap, obj], index=df.columns), ignore_index=True)
+        df = df.append(
+            pd.Series([name, elapse, nodes, cuts, gap, obj], index=df.columns),
+            ignore_index=True,
+        )
 
         # save data
-        df.to_csv('./res/{}.csv'.format(filename))
+        df.to_csv("./res/{}.csv".format(filename))
 
 
 if __name__ == "__main__":
 
     # set parser
     parser = argparse.ArgumentParser()
-    parser.add_argument('--size', type=int, default=5, choices=[5, 10, 20])
-    parser.add_argument('--noise', type=float, default=0.0, choices=[0, 0.001, 0.005])
-    parser.add_argument('--timelimit', type=int, default=0)
-    parser.add_argument('--type', type=str, default='synth', choices=['synth', 'real'])
-    parser.add_argument('--noheur', action='store_true', default=False)
-    parser.add_argument('--cycle3', action='store_true', default=False)
-    parser.add_argument('--cycle4', action='store_true', default=False)
-    parser.add_argument('--cycle8', action='store_true', default=False)
-    parser.add_argument('--facet', action='store_true', default=False)
+    parser.add_argument("--size", type=int, default=5, choices=[5, 10, 20])
+    parser.add_argument("--noise",
+                        type=float,
+                        default=0.0,
+                        choices=[0, 0.001, 0.005])
+    parser.add_argument("--timelimit", type=int, default=0)
+    parser.add_argument("--type",
+                        type=str,
+                        default="synth",
+                        choices=["synth", "real"])
+    parser.add_argument("--noheur", action="store_true", default=False)
+    parser.add_argument("--cycle3", action="store_true", default=False)
+    parser.add_argument("--cycle4", action="store_true", default=False)
+    parser.add_argument("--cycle8", action="store_true", default=False)
+    parser.add_argument("--facet", action="store_true", default=False)
 
     # get args
     args = parser.parse_args()

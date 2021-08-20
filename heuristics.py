@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import networkx as nx
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
-import networkx as nx
+
 import utils
+
 
 def solve(image, lambd):
     """
@@ -20,7 +22,7 @@ def solve(image, lambd):
     iterations = 100
     for i in range(iterations):
         # increase beta for each iteration
-        beta = (i / iterations) ** gamma * lambd
+        beta = (i / iterations)**gamma * lambd
         # region fusion
         region_fuse(graph, beta)
 
@@ -39,80 +41,80 @@ def affine_regression(image):
     for (i, j) in graph.nodes():
         # find the best 4 points fiting plane
         mse = float("inf")
-        #======================= right and down ================================
+        # ======================= right and down ================================
         # avoid out of bound
         if i < image.shape[0] - 1 and j < image.shape[1] - 1:
             X = [[i, j]]
             y = [image[i, j]]
             # down neighbor
-            X.append([i+1, j])
-            y.append(image[i+1, j])
+            X.append([i + 1, j])
+            y.append(image[i + 1, j])
             # right neighbor
-            X.append([i, j+1])
-            y.append(image[i, j+1])
+            X.append([i, j + 1])
+            y.append(image[i, j + 1])
             # down right neighbor
-            X.append([i+1, j+1])
-            y.append(image[i+1, j+1])
+            X.append([i + 1, j + 1])
+            y.append(image[i + 1, j + 1])
 
             # linear regression
             cur_affine_param, cur_mse = fit(X, y)
             if cur_mse < mse:
                 affine_param, mse = cur_affine_param, cur_mse
 
-        #========================== left and down ===============================
+        # ========================== left and down ===============================
         # avoid out of bound
         if i < image.shape[0] - 1 and j:
             X = [[i, j]]
             y = [image[i, j]]
             # down neighbor
-            X.append([i+1, j])
-            y.append(image[i+1, j])
+            X.append([i + 1, j])
+            y.append(image[i + 1, j])
             # left neighbor
-            X.append([i, j-1])
-            y.append(image[i, j-1])
+            X.append([i, j - 1])
+            y.append(image[i, j - 1])
             # down left neighbor
-            X.append([i+1, j-1])
-            y.append(image[i+1, j-1])
+            X.append([i + 1, j - 1])
+            y.append(image[i + 1, j - 1])
 
             # linear regression
             cur_affine_param, cur_mse = fit(X, y)
             if cur_mse < mse:
                 affine_param, mse = cur_affine_param, cur_mse
 
-        #========================== right and up ===============================
+        # ========================== right and up ===============================
         # avoid out of bound
         if i and j < image.shape[1] - 1:
             X = [[i, j]]
             y = [image[i, j]]
             # up neighbor
-            X.append([i-1, j])
-            y.append(image[i-1, j])
+            X.append([i - 1, j])
+            y.append(image[i - 1, j])
             # right neighbor
-            X.append([i, j+1])
-            y.append(image[i, j+1])
+            X.append([i, j + 1])
+            y.append(image[i, j + 1])
             # up right neighbor
-            X.append([i-1, j+1])
-            y.append(image[i-1, j+1])
+            X.append([i - 1, j + 1])
+            y.append(image[i - 1, j + 1])
 
             # linear regression
             cur_affine_param, cur_mse = fit(X, y)
             if cur_mse < mse:
                 affine_param, mse = cur_affine_param, cur_mse
 
-        #========================= left and up =================================
+        # ========================= left and up =================================
         # avoid out of bound
         if i and j:
             X = [[i, j]]
             y = [image[i, j]]
             # down neighbor
-            X.append([i-1, j])
-            y.append(image[i-1, j])
+            X.append([i - 1, j])
+            y.append(image[i - 1, j])
             # left neighbor
-            X.append([i, j-1])
-            y.append(image[i, j-1])
+            X.append([i, j - 1])
+            y.append(image[i, j - 1])
             # down left neighbor
-            X.append([i-1, j-1])
-            y.append(image[i-1, j-1])
+            X.append([i - 1, j - 1])
+            y.append(image[i - 1, j - 1])
 
             # linear regression
             cur_affine_param, cur_mse = fit(X, y)
@@ -125,11 +127,11 @@ def affine_regression(image):
     # set attribute
     for (i, j) in graph.nodes():
         # number of nodes as weight
-        graph.nodes[(i,j)]["weight"] = 1
+        graph.nodes[(i, j)]["weight"] = 1
         # coordinates and depth
-        graph.nodes[(i,j)]["pixels"] = np.array([[i, j, image[i, j]]])
+        graph.nodes[(i, j)]["pixels"] = np.array([[i, j, image[i, j]]])
         # affine parameters
-        graph.nodes[(i,j)]["affine_params"] = affine_params[i, j]
+        graph.nodes[(i, j)]["affine_params"] = affine_params[i, j]
 
     return graph
 
@@ -173,7 +175,7 @@ def region_fuse(graph, beta):
             cuv = graph.edges[u, v]["connections"]
 
             # fusion criterion
-            if wu * wv * np.linalg.norm(Yu - Yv) ** 2 <= beta * cuv * (wu + wv):
+            if wu * wv * np.linalg.norm(Yu - Yv)**2 <= beta * cuv * (wu + wv):
                 # contract nodes
                 contract(graph, v, u)
                 # contract plane
@@ -194,9 +196,11 @@ def contract(graph, u, v):
     Yv = graph.nodes[v]["affine_params"]
 
     # merge node attributes
-    graph.nodes[u]["pixels"] = np.concatenate((graph.nodes[u]["pixels"], graph.nodes[v]["pixels"]), axis=0)
+    graph.nodes[u]["pixels"] = np.concatenate(
+        (graph.nodes[u]["pixels"], graph.nodes[v]["pixels"]), axis=0)
     graph.nodes[u]["weight"] = wu + wv
-    if len(np.unique(graph.nodes[u]["pixels"][:,0])) > 1 and len(np.unique(graph.nodes[u]["pixels"][:,1])) > 1:
+    if (len(np.unique(graph.nodes[u]["pixels"][:, 0])) > 1
+            and len(np.unique(graph.nodes[u]["pixels"][:, 1])) > 1):
         X, y = [], []
         for pixel in graph.nodes[u]["pixels"]:
             X.append([pixel[0], pixel[1]])
@@ -211,10 +215,16 @@ def contract(graph, u, v):
         graph.remove_edge(u, v)
     for k in graph.neighbors(v):
         if k in graph.neighbors(u):
-            graph.edges[u, k]["connections"] += graph.edges[v, k]["connections"]
+            graph.edges[u, k]["connections"] += graph.edges[v,
+                                                            k]["connections"]
             graph.edges[u, k]["orth"] |= graph.edges[v, k]["orth"]
         else:
-            graph.add_edge(u, k, connections=graph.edges[v, k]["connections"], orth=graph.edges[v, k]["orth"])
+            graph.add_edge(
+                u,
+                k,
+                connections=graph.edges[v, k]["connections"],
+                orth=graph.edges[v, k]["orth"],
+            )
 
     # remove node v
     graph.remove_node(v)

@@ -2,11 +2,19 @@
 # coding: utf-8
 
 import cplex
-from callback import multicutCallback, cutremoveCallback
 import numpy as np
-import utils
 
-def build_model(image, param1, param2, cycle3=True, cycle4=True, cycle8=False, facet=True):
+import utils
+from callback import cutremoveCallback, multicutCallback
+
+
+def build_model(image,
+                param1,
+                param2,
+                cycle3=True,
+                cycle4=True,
+                cycle8=False,
+                facet=True):
     """
     build ilp model for piecewise linear
     """
@@ -28,7 +36,8 @@ def build_model(image, param1, param2, cycle3=True, cycle4=True, cycle8=False, f
     model.variables.add(obj=obj, types=types, names=colnames)
 
     # add constraints
-    rows, senses, rhs = get_constraints(image, derivative, param1, cycle3, cycle4, cycle8)
+    rows, senses, rhs = get_constraints(image, derivative, param1, cycle3,
+                                        cycle4, cycle8)
     model.linear_constraints.add(lin_expr=rows, senses=senses, rhs=rhs)
 
     # parallel
@@ -36,13 +45,13 @@ def build_model(image, param1, param2, cycle3=True, cycle4=True, cycle8=False, f
     model.parameters.threads.set(32)
 
     # register callback
-    #model.register_callback(cutremoveCallback)
+    # model.register_callback(cutremoveCallback)
     model.register_callback(multicutCallback)
     # associate additional data
     multicutCallback._graph = graph.copy()
     multicutCallback._names = model.variables.get_names()
     multicutCallback._facet = facet
-    #cutremoveCallback._names = model.variables.get_names()
+    # cutremoveCallback._names = model.variables.get_names()
 
     return model
 
@@ -72,7 +81,7 @@ def get_obj(derivative, param2):
     for i in range(derivative.shape[0]):
         for j in range(derivative.shape[1]):
             name = "e_{}_{}".format(i, j)
-            f_colnames += [name+"+", name+"-"]
+            f_colnames += [name + "+", name + "-"]
             f_obj += [1, 1]
             f_types += "CC"
 
@@ -82,25 +91,25 @@ def get_obj(derivative, param2):
     r_types = ""
     # for each row
     for i in range(derivative.shape[0]):
-        lambd = param2 * max(np.max(derivative[i,:,0]), 0.2) / 2
-        for j in range(derivative.shape[1]-1):
+        lambd = param2 * max(np.max(derivative[i, :, 0]), 0.2) / 2
+        for j in range(derivative.shape[1] - 1):
             name = "xr_{}_{}".format(i, j)
             r_colnames.append(name)
             r_obj.append(lambd)
             r_types += "B"
     # for each column
     for j in range(derivative.shape[1]):
-        lambd = param2 * max(np.max(derivative[:,j,1]), 0.2) / 2
-        for i in range(derivative.shape[0]-1):
+        lambd = param2 * max(np.max(derivative[:, j, 1]), 0.2) / 2
+        for i in range(derivative.shape[0] - 1):
             name = "xc_{}_{}".format(i, j)
             r_colnames.append(name)
             r_obj.append(lambd)
             r_types += "B"
     # for each forward diagonal
-    for i in range(derivative.shape[0]-1):
-        for j in range(derivative.shape[1]-1):
-            diag = derivative[:,:,2].diagonal(j-i)
-            assert derivative[i,j,2] in diag
+    for i in range(derivative.shape[0] - 1):
+        for j in range(derivative.shape[1] - 1):
+            diag = derivative[:, :, 2].diagonal(j - i)
+            assert derivative[i, j, 2] in diag
             lambd = param2 * max(np.max(diag), 0.2) / 2
             name = "xf_{}_{}".format(i, j)
             r_colnames.append(name)
@@ -108,9 +117,10 @@ def get_obj(derivative, param2):
             r_types += "B"
     # for each backward diagonal
     for i in range(1, derivative.shape[0]):
-        for j in range(derivative.shape[1]-1):
-            diag = np.rot90(derivative[:,:,3]).diagonal(i+j-derivative.shape[1]+1)
-            assert derivative[i,j,3] in diag
+        for j in range(derivative.shape[1] - 1):
+            diag = np.rot90(
+                derivative[:, :, 3]).diagonal(i + j - derivative.shape[1] + 1)
+            assert derivative[i, j, 3] in diag
             lambd = param2 * max(np.max(diag), 0.2) / 2
             name = "xb_{}_{}".format(i, j)
             r_colnames.append(name)
@@ -136,9 +146,11 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
     # absolute value constraints
     for i in range(image.shape[0]):
         for j in range(image.shape[1]):
-            vars = ["w_{}_{}".format(i, j),
-                    "e_{}_{}+".format(i, j),
-                    "e_{}_{}-".format(i, j)]
+            vars = [
+                "w_{}_{}".format(i, j),
+                "e_{}_{}+".format(i, j),
+                "e_{}_{}-".format(i, j),
+            ]
             coefs = [1, -1, 1]
             yij = image[i, j]
             rows.append([vars, coefs])
@@ -148,15 +160,19 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
     M = 2
     # big M constraints for rows
     for i in range(derivative.shape[0]):
-        #M = param1 * max(np.max(derivative[i,:,0]), 0.5)
-        for j in range(1, image.shape[1]-1):
+        # M = param1 * max(np.max(derivative[i,:,0]), 0.5)
+        for j in range(1, image.shape[1] - 1):
             # second derivative
-            vars = ["w_{}_{}".format(i, j-1),
-                    "w_{}_{}".format(i, j),
-                    "w_{}_{}".format(i, j+1)]
+            vars = [
+                "w_{}_{}".format(i, j - 1),
+                "w_{}_{}".format(i, j),
+                "w_{}_{}".format(i, j + 1),
+            ]
             # big M
-            vars += ["xr_{}_{}".format(i, j-1),
-                     "xr_{}_{}".format(i, j),]
+            vars += [
+                "xr_{}_{}".format(i, j - 1),
+                "xr_{}_{}".format(i, j),
+            ]
             # positive derivative
             coefs_p = [1, -2, 1, -M, -M]
             # negative derivative
@@ -168,15 +184,19 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
 
     # big M constraints for columns
     for j in range(derivative.shape[1]):
-        #M = param1 * max(np.max(derivative[:,j,1]), 0.5)
-        for i in range(1, image.shape[0]-1):
+        # M = param1 * max(np.max(derivative[:,j,1]), 0.5)
+        for i in range(1, image.shape[0] - 1):
             # second derivative
-            vars = ["w_{}_{}".format(i-1, j),
-                    "w_{}_{}".format(i, j),
-                    "w_{}_{}".format(i+1, j)]
+            vars = [
+                "w_{}_{}".format(i - 1, j),
+                "w_{}_{}".format(i, j),
+                "w_{}_{}".format(i + 1, j),
+            ]
             # big M
-            vars += ["xc_{}_{}".format(i-1, j),
-                     "xc_{}_{}".format(i, j),]
+            vars += [
+                "xc_{}_{}".format(i - 1, j),
+                "xc_{}_{}".format(i, j),
+            ]
             # positive derivative
             coefs_p = [1, -2, 1, -M, -M]
             # negative derivative
@@ -187,15 +207,19 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
             senses += "LL"
 
     # big M constraints for forward diagonal
-    for i in range(1, derivative.shape[0]-1):
-        for j in range(1, derivative.shape[1]-1):
+    for i in range(1, derivative.shape[0] - 1):
+        for j in range(1, derivative.shape[1] - 1):
             # second derivative
-            vars = ["w_{}_{}".format(i-1, j-1),
-                    "w_{}_{}".format(i, j),
-                    "w_{}_{}".format(i+1, j+1)]
+            vars = [
+                "w_{}_{}".format(i - 1, j - 1),
+                "w_{}_{}".format(i, j),
+                "w_{}_{}".format(i + 1, j + 1),
+            ]
             # big M
-            vars += ["xf_{}_{}".format(i-1, j-1),
-                     "xf_{}_{}".format(i, j),]
+            vars += [
+                "xf_{}_{}".format(i - 1, j - 1),
+                "xf_{}_{}".format(i, j),
+            ]
             # positive derivative
             coefs_p = [1, -2, 1, -M, -M]
             # negative derivative
@@ -206,15 +230,19 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
             senses += "LL"
 
     # big M constraints for backward diagonal
-    for i in range(1, derivative.shape[0]-1):
-        for j in range(1, derivative.shape[1]-1):
+    for i in range(1, derivative.shape[0] - 1):
+        for j in range(1, derivative.shape[1] - 1):
             # second derivative
-            vars = ["w_{}_{}".format(i+1, j-1),
-                    "w_{}_{}".format(i, j),
-                    "w_{}_{}".format(i-1, j+1)]
+            vars = [
+                "w_{}_{}".format(i + 1, j - 1),
+                "w_{}_{}".format(i, j),
+                "w_{}_{}".format(i - 1, j + 1),
+            ]
             # big M
-            vars += ["xb_{}_{}".format(i+1, j-1),
-                     "xb_{}_{}".format(i, j),]
+            vars += [
+                "xb_{}_{}".format(i + 1, j - 1),
+                "xb_{}_{}".format(i, j),
+            ]
             # positive derivative
             coefs_p = [1, -2, 1, -M, -M]
             # negative derivative
@@ -229,10 +257,12 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
         # first quadrant
         print("Add cycle3 constraints")
         for i in range(1, image.shape[0]):
-            for j in range(image.shape[1]-1):
-                vars = ["xr_{}_{}".format(i, j),
-                        "xc_{}_{}".format(i-1, j),
-                        "xf_{}_{}".format(i-1, j)]
+            for j in range(image.shape[1] - 1):
+                vars = [
+                    "xr_{}_{}".format(i, j),
+                    "xc_{}_{}".format(i - 1, j),
+                    "xf_{}_{}".format(i - 1, j),
+                ]
                 for k in range(3):
                     coefs = [1, 1, 1]
                     coefs[k] = -1
@@ -242,9 +272,11 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
         # second quadrant
         for i in range(1, image.shape[0]):
             for j in range(1, image.shape[1]):
-                vars = ["xr_{}_{}".format(i, j-1),
-                        "xc_{}_{}".format(i-1, j),
-                        "xb_{}_{}".format(i, j-1)]
+                vars = [
+                    "xr_{}_{}".format(i, j - 1),
+                    "xc_{}_{}".format(i - 1, j),
+                    "xb_{}_{}".format(i, j - 1),
+                ]
                 for k in range(3):
                     coefs = [1, 1, 1]
                     coefs[k] = -1
@@ -252,11 +284,13 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
                     rhs.append(0)
                     senses += "G"
         # third quadrant
-        for i in range(image.shape[0]-1):
+        for i in range(image.shape[0] - 1):
             for j in range(1, image.shape[1]):
-                vars = ["xr_{}_{}".format(i, j-1),
-                        "xc_{}_{}".format(i, j),
-                        "xf_{}_{}".format(i, j-1)]
+                vars = [
+                    "xr_{}_{}".format(i, j - 1),
+                    "xc_{}_{}".format(i, j),
+                    "xf_{}_{}".format(i, j - 1),
+                ]
                 for k in range(3):
                     coefs = [1, 1, 1]
                     coefs[k] = -1
@@ -264,11 +298,13 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
                     rhs.append(0)
                     senses += "G"
         # fourth quadrant
-        for i in range(image.shape[0]-1):
-            for j in range(image.shape[1]-1):
-                vars = ["xr_{}_{}".format(i, j),
-                        "xc_{}_{}".format(i, j),
-                        "xb_{}_{}".format(i+1, j)]
+        for i in range(image.shape[0] - 1):
+            for j in range(image.shape[1] - 1):
+                vars = [
+                    "xr_{}_{}".format(i, j),
+                    "xc_{}_{}".format(i, j),
+                    "xb_{}_{}".format(i + 1, j),
+                ]
                 for k in range(3):
                     coefs = [1, 1, 1]
                     coefs[k] = -1
@@ -279,13 +315,15 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
     # 4-edge cycle multicut constraints
     if cycle4:
         print("Add cycle4 constraints")
-        for i in range(image.shape[0]-1):
-            for j in range(image.shape[1]-1):
+        for i in range(image.shape[0] - 1):
+            for j in range(image.shape[1] - 1):
                 # 4 edges
-                vars = ["xr_{}_{}".format(i, j),
-                        "xc_{}_{}".format(i, j),
-                        "xr_{}_{}".format(i+1, j),
-                        "xc_{}_{}".format(i, j+1)]
+                vars = [
+                    "xr_{}_{}".format(i, j),
+                    "xc_{}_{}".format(i, j),
+                    "xr_{}_{}".format(i + 1, j),
+                    "xc_{}_{}".format(i, j + 1),
+                ]
                 for k in range(4):
                     coefs = [1, 1, 1, 1]
                     coefs[k] = -1
@@ -296,17 +334,19 @@ def get_constraints(image, derivative, param1, cycle3, cycle4, cycle8):
     # 8-edge cycle multicut constraints
     if cycle8:
         print("Add cycle8 constraints")
-        for i in range(image.shape[0]-2):
-            for j in range(image.shape[1]-2):
+        for i in range(image.shape[0] - 2):
+            for j in range(image.shape[1] - 2):
                 # 4 edges
-                vars = ["xr_{}_{}".format(i, j),
-                        "xr_{}_{}".format(i, j+1),
-                        "xc_{}_{}".format(i, j+2),
-                        "xc_{}_{}".format(i+1, j+2),
-                        "xr_{}_{}".format(i+2, j+1),
-                        "xr_{}_{}".format(i+2, j),
-                        "xc_{}_{}".format(i+1, j),
-                        "xc_{}_{}".format(i, j)]
+                vars = [
+                    "xr_{}_{}".format(i, j),
+                    "xr_{}_{}".format(i, j + 1),
+                    "xc_{}_{}".format(i, j + 2),
+                    "xc_{}_{}".format(i + 1, j + 2),
+                    "xr_{}_{}".format(i + 2, j + 1),
+                    "xr_{}_{}".format(i + 2, j),
+                    "xc_{}_{}".format(i + 1, j),
+                    "xc_{}_{}".format(i, j),
+                ]
                 for k in range(8):
                     coefs = [1, 1, 1, 1, 1, 1, 1, 1]
                     coefs[k] = -1
@@ -327,37 +367,41 @@ def warm_start(model, segmentation):
 
     # cut in rows
     for i in range(segmentation.shape[0]):
-        for j in range(segmentation.shape[1]-1):
+        for j in range(segmentation.shape[1] - 1):
             names.append("xr_{}_{}".format(i, j))
-            if segmentation[i, j] != segmentation[i, j+1]:
+            if segmentation[i, j] != segmentation[i, j + 1]:
                 vars.append(1)
             else:
                 vars.append(0)
 
     # cut in columns
-    for i in range(segmentation.shape[0]-1):
+    for i in range(segmentation.shape[0] - 1):
         for j in range(segmentation.shape[1]):
             names.append("xc_{}_{}".format(i, j))
-            if segmentation[i, j] != segmentation[i+1, j]:
+            if segmentation[i, j] != segmentation[i + 1, j]:
                 vars.append(1)
             else:
                 vars.append(0)
 
     # cut in forward diagonals
-    for i in range(segmentation.shape[0]-1):
-        for j in range(segmentation.shape[1]-1):
+    for i in range(segmentation.shape[0] - 1):
+        for j in range(segmentation.shape[1] - 1):
             names.append("xf_{}_{}".format(i, j))
-            if segmentation[i, j] != segmentation[i+1, j+1]:
+            if segmentation[i, j] != segmentation[i + 1, j + 1]:
                 vars.append(1)
             else:
                 vars.append(0)
 
     for i in range(1, segmentation.shape[0]):
-        for j in range(segmentation.shape[1]-1):
+        for j in range(segmentation.shape[1] - 1):
             names.append("xb_{}_{}".format(i, j))
-            if segmentation[i, j] != segmentation[i-1, j+1]:
+            if segmentation[i, j] != segmentation[i - 1, j + 1]:
                 vars.append(1)
             else:
                 vars.append(0)
 
-    model.MIP_starts.add(cplex.SparsePair(ind=names, val=vars), model.MIP_starts.effort_level.solve_fixed, "region_fusion")
+    model.MIP_starts.add(
+        cplex.SparsePair(ind=names, val=vars),
+        model.MIP_starts.effort_level.solve_fixed,
+        "region_fusion",
+    )
